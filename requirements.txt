@@ -1,0 +1,16 @@
+# Core dependencies (minimal)
+httpx>=0.27.0          # Async HTTP client with streaming support
+anthropic>=0.25.0      # Anthropic SDK (lightweight)
+
+# Optional: Telegram support
+python-telegram-bot>=20.0  # Lightweight Telegram bot
+
+# Optional: Discord support  
+discord.py>=2.3.0     # Discord integration
+
+# Optional: Web search
+brave-search-python>=0.1.0  # Brave Search API
+
+# Development
+pytest>=8.0.0
+ruff>=0.3.0
