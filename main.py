@@ -115,18 +115,147 @@ def init_config():
 
 
 async def start_gateway():
-    """Start gateway for Telegram/Discord.
+    """Start Nucleo gateway with configured channels.
     
-    Note: This is a placeholder. Full implementation would include
-    channel handlers similar to the Go version.
+    Connects Telegram, Discord, and other channels for unified messaging.
     """
     print("♎ Nucleo Gateway")
-    print("⚠️  Gateway mode not yet implemented")
-    print("Coming soon: Telegram, Discord, Whatsapp and other channels")
+    print("=" * 50)
     
-    # TODO: Implement channel handlers
-    # from nucleo.channels import TelegramChannel, DiscordChannel
-    # ...
+    # Load configuration
+    config = Config().load()
+    
+    # Check if any channels are enabled
+    enabled_channels = []
+    for platform in ['telegram', 'discord']:
+        if config.get(f'channels.{platform}.enabled', False):
+            enabled_channels.append(platform)
+    
+    if not enabled_channels:
+        print("⚠️  No channels enabled in config.json")
+        print("\nTo enable channels:")
+        print("  1. Copy config.example.json to config.json")
+        print("  2. Add bot tokens:")
+        print("     - Telegram: Get token from @BotFather")
+        print("     - Discord: Get token from https://discord.com/developers")
+        print("  3. Set 'enabled': true for desired channels")
+        print("  4. (Optional) Set 'allowed_users' to restrict access")
+        print("\nExample config:")
+        print('  "channels": {')
+        print('    "telegram": {')
+        print('      "enabled": true,')
+        print('      "token": "YOUR_BOT_TOKEN_HERE",')
+        print('      "allowed_users": []')
+        print('    }')
+        print('  }')
+        return
+    
+    print(f"🚀 Starting gateway with channels: {', '.join(enabled_channels)}")
+    print()
+    
+    try:
+        # Import channel classes
+        from nucleo.channels import (
+            ChannelManager,
+            MessageBus,
+            TelegramChannel,
+            DiscordChannel,
+        )
+        
+        # Create message bus
+        bus = MessageBus()
+        
+        # Create channel manager
+        manager = ChannelManager(config, bus)
+        
+        # Register channels
+        if config.get('channels.telegram.enabled', False):
+            try:
+                telegram = TelegramChannel(config, bus)
+                manager.register_channel(telegram)
+                print("✅ Registered Telegram channel")
+            except ValueError as e:
+                print(f"⚠️  Telegram error: {e}")
+        
+        if config.get('channels.discord.enabled', False):
+            try:
+                discord = DiscordChannel(config, bus)
+                manager.register_channel(discord)
+                print("✅ Registered Discord channel")
+            except ValueError as e:
+                print(f"⚠️  Discord error: {e}")
+        
+        if not manager.channels:
+            print("❌ No channels registered")
+            return
+        
+        print()
+        
+        # Create agent with bus connection
+        agent = Agent(config, bus=bus)
+        
+        # Subscribe agent to inbound messages
+        async def handle_inbound(message):
+            """Handle inbound message from any channel."""
+            try:
+                # Get channel name for logging
+                channel_name = message.platform.upper()
+                user_id = message.sender_id
+                
+                print(f"\n📨 [{channel_name}] Message from {user_id}: {message.content[:50]}...")
+                
+                # Chat with agent
+                response_chunks = []
+                async for chunk in agent.chat(message.content, stream=True, metadata={
+                    'platform': message.platform,
+                    'sender_id': message.sender_id,
+                    'chat_id': message.chat_id,
+                }):
+                    response_chunks.append(chunk)
+                
+                response = ''.join(response_chunks)
+                
+                # Send response back via the channel
+                from nucleo.channels import OutboundMessage
+                outbound = OutboundMessage(
+                    channel=message.platform,
+                    chat_id=message.chat_id,
+                    content=response,
+                )
+                
+                print(f"💬 [{channel_name}] Sending response: {response[:50]}...")
+                await bus.publish_outbound(outbound)
+                
+            except Exception as e:
+                print(f"❌ Error processing message: {e}")
+                import traceback
+                traceback.print_exc()
+        
+        await bus.subscribe_inbound(handle_inbound)
+        
+        # Start all channels
+        print("Starting channels...")
+        await manager.start()
+        
+        print("\n✨ Nucleo Gateway is running!")
+        print("Press Ctrl+C to stop")
+        print("=" * 50)
+        
+        # Keep running until interrupted
+        try:
+            await asyncio.Event().wait()
+        except KeyboardInterrupt:
+            print("\n\n⏹️  Stopping gateway...")
+            await manager.stop()
+            print("✅ Gateway stopped")
+    
+    except ImportError as e:
+        print(f"❌ Failed to import channel modules: {e}")
+        return
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        import traceback
+        traceback.print_exc()
 
 
 def main():

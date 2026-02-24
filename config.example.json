@@ -42,12 +42,14 @@
     "telegram": {
       "enabled": false,
       "token": "",
-      "allowed_users": []
+      "allowed_users": [],
+      "description": "Telegram bot token and configuration. Get token from @BotFather on Telegram."
     },
     "discord": {
       "enabled": false,
       "token": "",
-      "allowed_users": []
+      "allowed_users": [],
+      "description": "Discord bot token and configuration. Create application at https://discord.com/developers"
     }
   },
   "memory": {

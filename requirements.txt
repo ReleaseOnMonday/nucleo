@@ -9,8 +9,9 @@ python-telegram-bot>=20.0  # Lightweight Telegram bot
 discord.py>=2.3.0     # Discord integration
 
 # Optional: Web search
-brave-search-python>=0.1.0  # Brave Search API
+brave-search>=0.2.0  # Brave Search API
 
 # Development
 pytest>=8.0.0
 ruff>=0.3.0
+

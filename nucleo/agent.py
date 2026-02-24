@@ -7,15 +7,24 @@ from .config import Config
 from .llm import LLMClient
 from .tools import BashTool, FilesTool, SearchTool, Tool
 
+# Import channel types (optional, only if channels module is available)
+try:
+    from .channels.bus import MessageBus
+    from .channels.message import OutboundMessage
+except ImportError:
+    MessageBus = None
+    OutboundMessage = None
+
 
 class Agent:
     """Lightweight AI agent with tool support."""
     
-    def __init__(self, config: Optional[Config] = None):
+    def __init__(self, config: Optional[Config] = None, bus: Optional['MessageBus'] = None):
         """Initialize agent.
         
         Args:
             config: Configuration object
+            bus: Optional message bus for channel communication
         """
         if config is None:
             config = Config().load()
@@ -24,6 +33,8 @@ class Agent:
         self.llm = LLMClient(config.data)
         self.tools: Dict[str, Tool] = {}
         self.history: List[Dict[str, str]] = []
+        self.bus = bus
+        self._current_metadata: Optional[Dict[str, Any]] = None
         
         # Initialize tools
         self._init_tools()
@@ -44,16 +55,20 @@ class Agent:
         if tools_config.get('files', {}).get('enabled', True):
             self.tools['files'] = FilesTool(tools_config.get('files', {}))
     
-    async def chat(self, message: str, stream: bool = True) -> AsyncIterator[str]:
+    async def chat(self, message: str, stream: bool = True, metadata: Optional[Dict[str, Any]] = None) -> AsyncIterator[str]:
         """Chat with the agent.
         
         Args:
             message: User message
             stream: Whether to stream response
+            metadata: Optional metadata from channel (sender_id, chat_id, platform, etc.)
             
         Yields:
             Response chunks
         """
+        # Store current message metadata for potential channel response routing
+        self._current_metadata = metadata
+        
         # Add user message to history
         self.history.append({
             'role': 'user',
@@ -213,3 +228,36 @@ class Agent:
     def reset(self):
         """Reset conversation history."""
         self.history = []
+        self._current_metadata = None
+    
+    async def send_to_channel(self, content: str, media: Optional[List[str]] = None) -> None:
+        """Send a message back to the channel that sent the current message.
+        
+        This allows the agent to proactively send messages to channels
+        (e.g., notifications, command results).
+        
+        Args:
+            content: Message content
+            media: Optional list of file paths to send
+            
+        Raises:
+            RuntimeError: If no channel bus available or no current message metadata
+        """
+        if not self.bus or not OutboundMessage:
+            raise RuntimeError("Channel bus not available")
+        
+        if not self._current_metadata:
+            raise RuntimeError("No current message metadata (not called from channel)")
+        
+        metadata = self._current_metadata
+        
+        # Create outbound message and publish
+        outbound = OutboundMessage(
+            channel=metadata.get('platform', ''),
+            chat_id=metadata.get('chat_id', ''),
+            content=content,
+            media=media or [],
+            metadata={}
+        )
+        
+        await self.bus.publish_outbound(outbound)
