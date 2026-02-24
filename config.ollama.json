@@ -1,0 +1,33 @@
+{
+  "agent": {
+    "model": "llama3.2",
+    "max_tokens": 4096,
+    "temperature": 0.7,
+    "max_tool_iterations": 10,
+    "system_prompt": "You are a helpful AI assistant. Be concise and practical."
+  },
+  "providers": {
+    "ollama": {
+      "enabled": true,
+      "base_url": "http://localhost:11434"
+    }
+  },
+  "tools": {
+    "bash": {
+      "enabled": true,
+      "allowed_commands": ["ls", "cat", "pwd", "echo", "date", "whoami", "hostname"]
+    },
+    "search": {
+      "enabled": false
+    },
+    "files": {
+      "enabled": true,
+      "workspace": "./workspace",
+      "max_file_size_mb": 10
+    }
+  },
+  "memory": {
+    "max_history_messages": 50,
+    "context_window_tokens": 100000
+  }
+}
