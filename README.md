@@ -3,6 +3,8 @@
 [![GitHub Stars](https://img.shields.io/github/stars/your-org/nucleo?style=flat-square)](https://github.com/your-org/nucleo)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue?style=flat-square)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/your-org/nucleo/ci.yml?style=flat-square&label=tests)](https://github.com/your-org/nucleo/actions)
+[![Code Coverage](https://img.shields.io/codecov/c/github/your-org/nucleo?style=flat-square)](https://codecov.io/gh/your-org/nucleo)
 [![Visitor Badge](https://visitor-badge.laobi.icu/badge?page_id=your-org.nucleo)](https://github.com/your-org/nucleo)
 
 Ultra-lightweight AI assistant in Python with multi-channel support for Telegram, Discord, and more. Inspired by modern distributed AI architectures.
@@ -415,8 +417,9 @@ Guides through:
 - `brave-search` - Web search
 
 **Development**
-- `pytest` - Testing
-- `ruff` - Linting
+- `pytest` - Testing framework
+- `pytest-cov` - Code coverage reporting
+- `ruff` - Code linting and formatting
 
 ---
 
@@ -714,7 +717,7 @@ See [GATEWAY.md](GATEWAY.md) for more advanced examples.
 
 ```bash
 # Install with dev dependencies
-pip install -r requirements.txt pytest ruff
+pip install -r requirements.txt
 
 # Format code
 ruff format nucleo/
@@ -722,9 +725,47 @@ ruff format nucleo/
 # Lint
 ruff check nucleo/
 
-# Run tests
-pytest test_nucleo.py -v
+# Run tests with coverage
+pytest test_nucleo.py -v --cov=nucleo --cov-report=html --cov-report=term
+
+# View coverage report
+open htmlcov/index.html  # macOS
+# or
+xdg-open htmlcov/index.html  # Linux
 ```
+
+### Code Coverage & Testing
+
+Nucleo uses **pytest** for unit testing and **pytest-cov** for code coverage reporting.
+
+**Local Coverage Report:**
+```bash
+# Run tests and generate HTML coverage report
+pytest test_nucleo.py --cov=nucleo --cov-report=html
+
+# View in browser
+open htmlcov/index.html
+```
+
+**Coverage Targets:**
+- Minimum: 70% overall code coverage
+- Goal: 85% by v1.5
+- Critical paths (agent.py, channels/): 90%+
+
+**Continuous Integration:**
+
+Every push and PR runs automated tests on:
+- ✅ Python 3.10, 3.11, 3.12
+- ✅ Code linting (ruff)
+- ✅ Code formatting checks
+- ✅ Unit tests with coverage
+- ✅ Coverage reports to Codecov
+
+Build status and coverage badges are displayed at the top of this README.
+
+**Coverage Badges:**
+- ![Tests](https://img.shields.io/github/actions/workflow/status/your-org/nucleo/ci.yml?label=tests) - Build pass/fail status
+- ![Coverage](https://img.shields.io/codecov/c/github/your-org/nucleo) - Code coverage percentage
 
 ### Contributing
 
@@ -782,6 +823,7 @@ A: Check console logs first. Enable verbose logging with `DEBUG=1`. See [GATEWAY
 - [README.md](README.md) - This file
 - [GATEWAY.md](GATEWAY.md) - Channel deployment and usage
 - [ARCHITECTURE.md](ARCHITECTURE.md) - Technical deep dive
+- [CI.md](CI.md) - Continuous integration and code coverage setup
 - [QUICKSTART.md](QUICKSTART.md) - Getting started guide
 - [config.example.json](config.example.json) - Configuration reference
 
