@@ -1,4 +1,11 @@
 {
+  "llm": {
+    "provider": "auto",
+    "model": "claude-3-5-sonnet-20241022",
+    "api_key": "",
+    "temperature": 0.7,
+    "max_tokens": 4096
+  },
   "agent": {
     "model": "claude-3-5-sonnet-20241022",
     "max_tokens": 4096,
@@ -24,18 +31,21 @@
     "bash": {
       "enabled": true,
       "allowed_commands": ["ls", "cat", "grep", "find", "echo"],
-      "max_output_length": 10000
+      "max_output_length": 10000,
+      "description": "Execute bash commands on the system"
     },
     "search": {
       "enabled": false,
       "provider": "brave",
       "api_key": "",
-      "max_results": 5
+      "max_results": 5,
+      "description": "Web search capability using Brave API"
     },
     "files": {
       "enabled": true,
       "workspace": "./workspace",
-      "max_file_size_mb": 10
+      "max_file_size_mb": 10,
+      "description": "File operations and management"
     }
   },
   "channels": {
@@ -48,12 +58,28 @@
     "discord": {
       "enabled": false,
       "token": "",
-      "allowed_users": [],
+      "allowed_guilds": [],
       "description": "Discord bot token and configuration. Create application at https://discord.com/developers"
     }
   },
   "memory": {
+    "enabled": true,
+    "db_path": null,
     "max_history_messages": 50,
-    "context_window_tokens": 100000
+    "context_window_tokens": 100000,
+    "description": "Persistent memory with SQLite and hybrid search (keyword + vector)"
+  },
+  "identity": {
+    "enabled": true,
+    "workspace_path": null,
+    "description": "Agent identity system (IDENTITY.md, SOUL.md, USER.md)"
+  },
+  "scheduler": {
+    "enabled": false,
+    "heartbeat_file": "./workspace/HEARTBEAT.md",
+    "timezone": "UTC",
+    "log_tasks": true,
+    "description": "Autonomous task scheduling and execution (HEARTBEAT.md)"
   }
 }
+

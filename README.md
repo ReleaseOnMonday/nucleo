@@ -7,6 +7,24 @@
 
 Ultra-lightweight AI assistant in Python with multi-channel support for Telegram, Discord, and more. Inspired by modern distributed AI architectures.
 
+---
+
+## 🎉 Latest Release (v1.0) - February 2026
+
+**Major Features Added:**
+- 🧠 **Persistent Memory System**: SQLite-backed conversation memory with hybrid search (keyword FTS + vector-ready)
+- 🎭 **Identity System**: Define agent personality (IDENTITY.md, SOUL.md, USER.md) for consistent behavior across channels
+- ⏰ **Heartbeat/Scheduler**: Autonomous task scheduling with cron expressions for proactive agent actions
+- 🚀 **Setup Wizard**: Interactive `python main.py setup` for zero-config onboarding
+- 🌐 **Multi-Channel Gateway**: Unified Telegram + Discord support with message normalization
+- 📦 **Enhanced LLM Support**: Auto-detection between Ollama (offline) and Claude API
+
+**Breaking Changes**: None - full backward compatibility maintained
+
+**Migration**: Existing config.json files continue to work; new features are opt-in (enabled by default)
+
+---
+
 ## ✨ Features
 
 ### Core
@@ -16,15 +34,29 @@ Ultra-lightweight AI assistant in Python with multi-channel support for Telegram
 - 💬 **Multi-Channel**: Deploy to Telegram, Discord, and more
 - 🎯 **Smart**: Claude AI with tool orchestration
 
-### Capabilities
-- 📝 **Conversation Memory**: Persistent multi-turn chat history
-- 🧠 **Tool Orchestration**: Execute tools (bash, files, search) with AI decision-making
-- 🌐 **Web Search**: Real-time information retrieval
+### Intelligent Memory & Identity
+- 🧠 **Persistent Memory**: Automatic conversation storage with hybrid search (keyword FTS + vector-ready embedding support)
+- 🎭 **Identity System**: Define agent personality, values, and user context (IDENTITY.md, SOUL.md, USER.md)
+- 📚 **Context Injection**: Recent memories + identity automatically included in LLM prompts
+- 👤 **Per-User Memory**: Separate memory space per user with statistics tracking
+
+### Autonomous Operation
+- ⏰ **Task Scheduler**: Cron-based autonomous tasks (scheduled messages, periodic checks, notifications)
+- 💬 **Proactive Messaging**: Agent can send messages without user trigger via HEARTBEAT.md
+- 🔄 **Heartbeat System**: Define recurring tasks for autonomous agent behavior
+
+### Tool Orchestration & Capabilities
+- 🧠 **Tool Use**: Execute tools (bash, files, search) with AI decision-making
+- 🌐 **Web Search**: Real-time information retrieval via Brave API
 - 📁 **File Operations**: Read, write, and analyze files safely
 - 🛡️ **Sandboxed Bash**: Execute shell commands with allowlist
 - 🔄 **Streaming**: Real-time response streaming
+
+### Multi-Channel & Configuration
 - 👥 **Multi-User**: Handle concurrent users across channels
-- 🎛️ **Fine-Grained Configuration**: Control every aspect via JSON config
+- 🎛️ **Setup Wizard**: Interactive `python main.py setup` for zero-config onboarding
+- 📝 **Conversation Memory**: Persistent multi-turn chat history per user
+- 🔐 **Access Control**: Allowlist-based user/guild restrictions
 
 ## Quick Start
 
@@ -74,7 +106,21 @@ Edit `config.json` and add your API keys:
 }
 ```
 
-### 3. Run
+### 3. Setup (Optional but Recommended)
+
+Run the interactive setup wizard:
+
+```bash
+python main.py setup
+```
+
+This will:
+- Detect available LLMs (Ollama, Claude API)
+- Configure Telegram and Discord channels
+- Set up tools (bash, search, files)
+- Create identity files for customization
+
+### 4. Run
 
 **Interactive Chat**
 ```bash
@@ -174,39 +220,53 @@ See [GATEWAY.md](GATEWAY.md) for:
 
 ## 🏗️ Architecture
 
-### System Design
+### System Design (Pictorial)
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    User Interfaces                           │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │   Telegram   │  │   Discord    │  │ (More Soon)  │      │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
-└─────────────────────────────────────────────────────────────┘
-                         ↓
-┌─────────────────────────────────────────────────────────────┐
-│              Message Bus (Pub/Sub)                           │
-│  Decouples channels from agent, enables horizontal scaling  │
-└─────────────────────────────────────────────────────────────┘
-                         ↓
-┌─────────────────────────────────────────────────────────────┐
-│                   Agent Core                                │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │ Chat Loop    │  │ Tool System  │  │ History Mgmt │     │
-│  └──────────────┘  └──────────────┘  └──────────────┘     │
-└─────────────────────────────────────────────────────────────┘
-                         ↓
-┌─────────────────────────────────────────────────────────────┐
-│                    Tools & Services                          │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │ Bash Tool    │  │ Search Tool  │  │ Files Tool   │     │
-│  └──────────────┘  └──────────────┘  └──────────────┘     │
-└─────────────────────────────────────────────────────────────┘
-                         ↓
-┌─────────────────────────────────────────────────────────────┐
-│                    LLM Layer                                 │
-│  Anthropic Claude 3.5 Sonnet with Tool Use                  │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph Channels["📡 Communication Channels"]
+        TG["🔵 Telegram<br/>Long Polling"]
+        DC["🎮 Discord<br/>WebSocket"]
+        WA["💬 WhatsApp<br/>Cloud API<br/>(Planned)"]
+    end
+    
+    subgraph Bus["🔄 Message Bus"]
+        PUB["Pub/Sub Pattern<br/>Message Routing"]
+    end
+    
+    subgraph Core["🧠 Agent Core"]
+        AGENT["Agent<br/>LLM Chat Loop"]
+        MEM["💾 Memory<br/>SQLite + FTS"]
+        IDENT["🎭 Identity<br/>Personality"]
+    end
+    
+    subgraph Tools["🔧 Tool System"]
+        BASH["🖥️ Bash<br/>Execute Commands"]
+        FILES["📁 Files<br/>Read/Write"]
+        SEARCH["🔍 Search<br/>Web Access"]
+    end
+    
+    subgraph Services["⏰ Services"]
+        SCHED["📅 Scheduler<br/>Heartbeat Tasks"]
+        LLM["🤖 LLM Layer<br/>Claude/Ollama"]
+    end
+    
+    Channels -->|normalize| PUB
+    PUB -->|route| AGENT
+    AGENT -->|store/recall| MEM
+    AGENT -->|inject| IDENT
+    AGENT -->|decide| Tools
+    Tools -->|execute| AGENT
+    AGENT -->|orchestrate| LLM
+    SCHED -->|publish| AGENT
+    LLM -->|response| PUB
+    PUB -->|deliver| Channels
+    
+    style Channels fill:#e1f5ff
+    style Bus fill:#f3e5f5
+    style Core fill:#fcf4e4
+    style Tools fill:#f1f8e9
+    style Services fill:#ffe0b2
 ```
 
 ### File Structure
@@ -214,45 +274,134 @@ See [GATEWAY.md](GATEWAY.md) for:
 ```
 nucleo/
 ├── agent.py                 # Core agent with tool orchestration
-├── config.py               # Configuration management
-├── llm.py                  # LLM client (Anthropic)
+├── config.py                # Configuration management
+├── llm.py                   # LLM client (Anthropic/Ollama)
+├── memory.py                # 💾 Persistent memory with SQLite & hybrid search
+├── identity.py              # 🎭 Identity system (IDENTITY.md, SOUL.md, USER.md)
+├── scheduler.py             # ⏰ Task scheduler with cron support
+├── setup.py                 # 🚀 Interactive setup wizard
 ├── tools/
-│   ├── base.py            # Tool interface
-│   ├── bash.py            # Shell execution
-│   ├── files.py           # File operations
-│   └── search.py          # Web search
+│   ├── base.py              # Tool interface
+│   ├── bash.py              # Shell execution
+│   ├── files.py             # File operations
+│   └── search.py            # Web search
 └── channels/
-    ├── base.py            # Channel interface
-    ├── manager.py         # Channel orchestration
-    ├── bus.py             # Message bus
-    ├── telegram.py        # Telegram integration
-    ├── discord.py         # Discord integration
-    └── message.py         # Message types
+    ├── base.py              # Channel interface
+    ├── manager.py           # Channel orchestration
+    ├── bus.py               # Message bus (pub/sub)
+    ├── telegram.py          # Telegram integration
+    ├── discord.py           # Discord integration
+    └── message.py           # Message types
+
+workspace/
+├── IDENTITY.md              # Agent identity (who are you?)
+├── SOUL.md                  # Agent personality (values & tone)
+├── USER.md                  # User profile guidance
+├── HEARTBEAT.md             # Scheduled autonomous tasks
+└── (files & data)           # Working directory for files tool
 ```
 
-### Message Flow
+### Message Flow & Data Pipeline
 
-```
-User Message
-    ↓
-Channel listens & normalizes
-    ↓
-MessageBus.publish_inbound()
-    ↓
-Agent.chat() processes with tools
-    ↓
-LLM generates response (calling tools as needed)
-    ↓
-MessageBus.publish_outbound()
-    ↓
-ChannelManager routes to source channel
-    ↓
-Channel sends response to user
+```mermaid
+sequenceDiagram
+    participant User as User (Telegram/Discord)<br/>
+    participant Chan as Channel<br/>Listener
+    participant Bus as Message<br/>Bus
+    participant Agent as Agent<br/>Core
+    participant Mem as Memory<br/>System
+    participant Ident as Identity<br/>System
+    participant LLM as LLM<br/>(Claude/Ollama)
+    participant Tool as Tool<br/>System
+    
+    User->>Chan: Send Message
+    Chan->>Chan: Normalize Format
+    Chan->>Bus: publish_inbound()
+    Bus->>Agent: Handle Message (metadata)
+    Agent->>Mem: Save incoming message
+    Agent->>Mem: Recall recent context
+    Agent->>Ident: Load personality
+    Agent->>Agent: Build system prompt<br/>with identity + memory
+    Agent->>LLM: Send with context
+    LLM->>Tool: Decide if tool needed
+    Tool->>LLM: Execute result
+    LLM->>Agent: Final response
+    Agent->>Mem: Save response
+    Agent->>Bus: publish_outbound()
+    Bus->>Chan: Route to source<br/>
+    Chan->>User: Deliver response
 ```
 
 ---
 
-## 📦 Dependencies
+## � Advanced Features
+
+### Persistent Memory System
+
+Automatically saves and recalls conversation context:
+
+```json
+{
+  "memory": {
+    "enabled": true,
+    "db_path": null,
+    "max_history_messages": 50
+  }
+}
+```
+
+**Features:**
+- SQLite database with full-text search (FTS5)
+- Per-user memory isolation
+- Keyword extraction and deduplication
+- Importance levels (1-5) for prioritization
+- Vector embedding support (future)
+
+See memory auto-injection in agent prompts: Agent recalls 3 most recent memories for each conversation.
+
+### Identity & Personality System
+
+Define consistent agent behavior across channels:
+
+- **IDENTITY.md** - Name, role, capabilities, purpose
+- **SOUL.md** - Values, personality, communication style, boundaries
+- **USER.md** - User profile, preferences, accessibility notes
+
+These are automatically loaded and injected into the system prompt.
+
+### Autonomous Task Scheduling
+
+Schedule recurring agent actions via HEARTBEAT.md:
+
+```yaml
+task_name: "Morning Standup"
+schedule: "0 9 * * *"
+enabled: true
+action: "send_to_channel"
+channel: "telegram"
+content: "Good morning! What's on your agenda?"
+```
+
+Supports cron expressions, multi-channel targets, and conditional logic.
+
+### Interactive Setup Wizard
+
+Zero-config onboarding:
+
+```bash
+python main.py setup
+```
+
+Guides through:
+- LLM selection (Claude/Ollama/Auto-detect)
+- Channel setup (Telegram, Discord)
+- Tool configuration (Bash, Search, Files)
+- API key collection
+- Identity file creation
+
+---
+
+## �📦 Dependencies
 
 **Core (required)**
 - `anthropic` - LLM provider
@@ -373,8 +522,28 @@ Nucleo uses JSON configuration. Key sections:
     "discord": {
       "enabled": false,
       "token": "",
-      "allowed_users": []
+      "allowed_guilds": []
     }
+  }
+}
+```
+
+### Memory & Identity Configuration
+```json
+{
+  "memory": {
+    "enabled": true,
+    "db_path": null,
+    "max_history_messages": 50
+  },
+  "identity": {
+    "enabled": true,
+    "workspace_path": null
+  },
+  "scheduler": {
+    "enabled": false,
+    "heartbeat_file": "./workspace/HEARTBEAT.md",
+    "timezone": "UTC"
   }
 }
 ```
@@ -382,24 +551,6 @@ Nucleo uses JSON configuration. Key sections:
 See `config.example.json` for all available options.
 
 ---
-
-## Architecture
-
-```
-nucleo/
-├── agent.py          # Core agent loop
-├── config.py         # Configuration
-├── llm.py            # LLM client
-├── tools/            # Tool system
-└── channels/         # Integrations
-```
-
-## Memory Optimization
-
-- Lazy imports
-- Streaming responses
-- Minimal state management
-- No heavy frameworks
 
 ## 📊 Performance Benchmarks
 
@@ -473,42 +624,84 @@ export DEBUG=1 python main.py gateway
 
 ## 📚 Examples
 
-### Simple Chat Loop
+### Simple Chat Loop with Memory
 
 ```python
 from nucleo import Agent, Config
 
 config = Config().load()
-agent = Agent(config)
+agent = Agent(config)  # Memory auto-enabled if config allows
+
+user_id = "user123"
 
 while True:
     user_input = input("You: ")
     response = ""
-    async for chunk in agent.chat(user_input, stream=True):
+    
+    # Agent automatically saves to memory and recalls context
+    async for chunk in agent.chat(
+        user_input,
+        stream=True,
+        metadata={'sender_id': user_id, 'platform': 'cli'}
+    ):
         response += chunk
+    
     print("Agent:", response)
+    
+    # Check memory stats
+    if agent.memory:
+        stats = agent.memory.get_stats(user_id)
+        print(f"Memories: {stats['total_memories']}")
 ```
 
-### Using Tools
+### Using Tools with Memory Context
 
 ```python
 # Agent automatically uses tools when appropriate
+# Memory context is auto-injected into prompt
 async for chunk in agent.chat(
-    "List files in /tmp and search for 'nucleo'",
-    stream=True
+    "List files in workspace and search for 'nucleo'",
+    stream=True,
+    metadata={'sender_id': user_id, 'platform': 'telegram'}
 ):
     print(chunk, end="", flush=True)
 ```
 
-### Gateway with Multiple Channels
+### Gateway with Multiple Channels & Persistent Memory
 
 ```python
 from nucleo.channels import ChannelManager, TelegramChannel, DiscordChannel
 
-manager = ChannelManager(config)
-manager.register_channel(TelegramChannel(config, bus))
-manager.register_channel(DiscordChannel(config, bus))
+manager = ChannelManager(config, agent.bus)
+manager.register_channel(TelegramChannel(config, agent.bus))
+manager.register_channel(DiscordChannel(config, agent.bus))
+
+# Agent memory persists across all channels for each user
 await manager.start()
+```
+
+### Schedule Autonomous Tasks
+
+Create `/workspace/HEARTBEAT.md` with:
+
+```yaml
+task_name: "Daily Report"
+schedule: "0 18 * * *"
+enabled: true
+action: "send_to_channel"
+channel: "telegram"
+content: "Daily summary: You have {{memory_count}} conversations saved"
+```
+
+Then enable in config:
+
+```json
+{
+  "scheduler": {
+    "enabled": true,
+    "heartbeat_file": "./workspace/HEARTBEAT.md"
+  }
+}
 ```
 
 See [GATEWAY.md](GATEWAY.md) for more advanced examples.
@@ -546,3 +739,81 @@ We welcome contributions! Areas to enhance:
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines (coming soon).
 
 ---
+
+## ❓ FAQ
+
+**Q: How do I restrict access to specific users?**
+A: Set `allowed_users` in channel config with user IDs. Empty list allows all users.
+
+**Q: Can I use a different LLM provider?**
+A: Extend `LLMClient` in `nucleo/llm.py`. Currently supports Anthropic; OpenAI/OpenRouter support planned.
+
+**Q: What's the rate limit?**
+A: Limited by your Anthropic API plan. Free tier: ~25k tokens/min. Monitor in console logs.
+
+**Q: Can I run multiple Nucleo instances?**
+A: Yes! Each instance is stateless. Use a shared state backend for multi-instance chat history.
+
+**Q: How do I add a new tool?**
+A: Create a class extending `BaseTool`, implement `execute()` and `to_anthropic_tool()`, add to agent tools.
+
+**Q: Is there a web interface?**
+A: Not yet. Web dashboard planned for future version. Currently CLI and chat channels only.
+
+**Q: Can I use this commercially?**
+A: Yes! MIT license allows commercial use. See [LICENSE](LICENSE) for details.
+
+**Q: How do I debug issues?**
+A: Check console logs first. Enable verbose logging with `DEBUG=1`. See [GATEWAY.md](GATEWAY.md#troubleshooting).
+
+---
+
+## 🤝 Community
+
+- **Issues**: Report bugs or feature requests on GitHub
+- **Discussions**: Share ideas and ask questions
+- **Contributing**: We welcome pull requests!
+- **Support**: Check docs or open an issue
+
+---
+
+## 📖 Documentation
+
+- [README.md](README.md) - This file
+- [GATEWAY.md](GATEWAY.md) - Channel deployment and usage
+- [ARCHITECTURE.md](ARCHITECTURE.md) - Technical deep dive
+- [QUICKSTART.md](QUICKSTART.md) - Getting started guide
+- [config.example.json](config.example.json) - Configuration reference
+
+---
+
+## 🔗 Resources
+
+- [Claude API Documentation](https://docs.anthropic.com/)
+- [Python Telegram Bot](https://python-telegram-bot.readthedocs.io/)
+- [Discord.py Documentation](https://discordpy.readthedocs.io/)
+- [Brave Search API](https://api.search.brave.com/)
+
+---
+
+## 📝 License
+
+MIT License - see [LICENSE](LICENSE) file for details
+
+**Copyright © 2026 Nucleo Contributors**
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+---
+
+**Made with 🔧 for developers who value simplicity and efficiency**
+
+⭐ Like Nucleo? Consider starring the repository!
+

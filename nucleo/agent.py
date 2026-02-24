@@ -6,6 +6,8 @@ from typing import Any, AsyncIterator, Dict, List, Optional
 from .config import Config
 from .llm import LLMClient
 from .tools import BashTool, FilesTool, SearchTool, Tool
+from .memory import MemoryManager
+from .identity import IdentityManager
 
 # Import channel types (optional, only if channels module is available)
 try:
@@ -35,6 +37,21 @@ class Agent:
         self.history: List[Dict[str, str]] = []
         self.bus = bus
         self._current_metadata: Optional[Dict[str, Any]] = None
+        self._current_user_id: Optional[str] = None
+        
+        # Initialize memory system if enabled
+        memory_enabled = self.config.get('memory.enabled', True)
+        self.memory: Optional[MemoryManager] = None
+        if memory_enabled:
+            memory_db_path = self.config.get('memory.db_path', None)
+            self.memory = MemoryManager(db_path=memory_db_path)
+        
+        # Initialize identity system if enabled
+        identity_enabled = self.config.get('identity.enabled', True)
+        self.identity: Optional[IdentityManager] = None
+        if identity_enabled:
+            workspace_path = self.config.get('identity.workspace_path', None)
+            self.identity = IdentityManager(workspace_path=workspace_path)
         
         # Initialize tools
         self._init_tools()
@@ -69,6 +86,17 @@ class Agent:
         # Store current message metadata for potential channel response routing
         self._current_metadata = metadata
         
+        # Extract or derive user ID
+        if metadata:
+            # Try sender_id, user_id, or platform_platform_id format
+            self._current_user_id = metadata.get('sender_id') or metadata.get('user_id') or \
+                                    f"{metadata.get('platform', 'unknown')}:{metadata.get('chat_id', 'unknown')}"
+        
+        # Save incoming message to memory if enabled
+        if self.memory and self._current_user_id:
+            tags = [metadata.get('platform', 'chat')] if metadata else ['chat']
+            self.memory.save_memory(self._current_user_id, message, tags=tags, importance=1)
+        
         # Add user message to history
         self.history.append({
             'role': 'user',
@@ -93,6 +121,10 @@ class Agent:
                     yield chunk['content']
             elif chunk['type'] == 'tool_use':
                 tool_calls.append(chunk)
+        
+        # Save response to memory if enabled
+        if self.memory and self._current_user_id and response_content:
+            self.memory.save_memory(self._current_user_id, response_content, tags=['response'], importance=1)
         
         # If no tool calls, we're done
         if not tool_calls:
@@ -204,15 +236,37 @@ class Agent:
         """Prepare messages for LLM.
         
         Returns:
-            Messages with system prompt
+            Messages with system prompt, identity context, and memory
         """
         system_prompt = self.config.get(
             'agent.system_prompt',
             'You are a helpful AI assistant. Be concise and practical.'
         )
         
+        # Add identity context if available
+        identity_context = ""
+        if self.identity:
+            identity_ctx = self.identity.get_system_prompt_injection()
+            if identity_ctx:
+                identity_context = identity_ctx + "\n\n"
+        
+        # Add memory context if available
+        memory_context = ""
+        if self.memory and self._current_user_id:
+            # Get recent memories and relevant memories
+            recent_memories = self.memory.get_user_memories(self._current_user_id, limit=3)
+            
+            if recent_memories:
+                memory_context = "[Previous Conversation Context]\n"
+                for mem in recent_memories:
+                    memory_context += f"- {mem['content']}\n"
+                memory_context += "\n"
+        
+        # Combine all context
+        full_system_prompt = identity_context + system_prompt + "\n\n" + memory_context
+        
         messages = [
-            {'role': 'system', 'content': system_prompt}
+            {'role': 'system', 'content': full_system_prompt}
         ] + self.history
         
         return messages

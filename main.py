@@ -76,12 +76,14 @@ Usage:
     python main.py chat                    # Interactive chat mode
     python main.py query "your question"   # Single query
     python main.py gateway                 # Start gateway (Telegram/Discord)
+    python main.py setup                   # Interactive setup wizard
     python main.py init                    # Initialize configuration
 
 Examples:
     python main.py chat
     python main.py query "What is 2+2?"
     python main.py gateway
+    python main.py setup
 
 Configuration:
     Create config.json (see config.example.json for template)
@@ -279,6 +281,11 @@ def main():
     
     elif command == 'gateway':
         asyncio.run(start_gateway())
+    
+    elif command == 'setup':
+        from nucleo.setup import SetupWizard
+        wizard = SetupWizard()
+        wizard.run()
     
     elif command == 'init':
         init_config()
