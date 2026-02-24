@@ -1,13 +1,46 @@
 # Nucleo ♎
 
-[![GitHub Stars](https://img.shields.io/github/stars/your-org/nucleo?style=flat-square)](https://github.com/your-org/nucleo)
+<!-- Replace YOUR_ORG with your GitHub organization in the badges below -->
+[![GitHub Stars](https://img.shields.io/badge/stars-0-blue?style=flat-square&logo=github)](https://github.com/ReleaseOnMonday/nucleo)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue?style=flat-square)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/your-org/nucleo/ci.yml?style=flat-square&label=tests)](https://github.com/your-org/nucleo/actions)
-[![Code Coverage](https://img.shields.io/codecov/c/github/your-org/nucleo?style=flat-square)](https://codecov.io/gh/your-org/nucleo)
-[![Visitor Badge](https://visitor-badge.laobi.icu/badge?page_id=your-org.nucleo)](https://github.com/your-org/nucleo)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square&logo=github-actions)](https://github.com/ReleaseOnMonday/nucleo/actions)
+[![Code Coverage](https://img.shields.io/badge/coverage-pending-orange?style=flat-square)](https://codecov.io/gh/ReleaseOnMonday/nucleo)
+[![codecov](https://codecov.io/github/ReleaseOnMonday/nucleo/graph/badge.svg?token=6J6M2AQWFQ)](https://codecov.io/github/ReleaseOnMonday/nucleo)
+[![Visitor Badge](https://visitor-badge.laobi.icu/badge?page_id=ReleaseOnMonday.nucleo)](https://github.com/ReleaseOnMonday/nucleo)
 
 Ultra-lightweight AI assistant in Python with multi-channel support for Telegram, Discord, and more. Inspired by modern distributed AI architectures.
+
+---
+
+## 🖇️ Repository Setup
+
+This README and configuration files use placeholders for your GitHub organization. To use them with your repo:
+
+### Update Badges & Links
+
+1. **README.md** (badges at top):
+
+2. **config.example.json** (if needed)
+
+3. **.github/workflows/ci.yml** (if needed)
+
+### Connect Codecov
+
+For code coverage badges to work:
+
+1. Visit [codecov.io](https://codecov.io)
+2. Sign in with GitHub
+3. Select your repository
+4. Copy the coverage badge URL
+5. Update the README badge URL
+
+### Enable GitHub Actions
+
+1. Push code to GitHub
+2. Go to `Settings` → `Actions` → `General`
+3. Ensure "Actions permissions" is enabled
+4. Workflow will run automatically on next push
 
 ---
 
@@ -764,8 +797,8 @@ Every push and PR runs automated tests on:
 Build status and coverage badges are displayed at the top of this README.
 
 **Coverage Badges:**
-- ![Tests](https://img.shields.io/github/actions/workflow/status/your-org/nucleo/ci.yml?label=tests) - Build pass/fail status
-- ![Coverage](https://img.shields.io/codecov/c/github/your-org/nucleo) - Code coverage percentage
+- ![Tests](https://img.shields.io/github/actions/workflow/status/ReleaseOnMonday/nucleo/ci.yml?label=tests) - Build pass/fail status
+- ![Coverage](https://img.shields.io/codecov/c/github/ReleaseOnMonday/nucleo) - Code coverage percentage
 
 ### Contributing
 

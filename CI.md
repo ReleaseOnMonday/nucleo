@@ -175,8 +175,8 @@ async def test_agent_with_mock(mock_chat):
 Add these badges to your README or project documentation:
 
 ```markdown
-[![Build Status](https://img.shields.io/github/actions/workflow/status/your-org/nucleo/ci.yml?style=flat-square&label=tests)](https://github.com/your-org/nucleo/actions)
-[![Code Coverage](https://img.shields.io/codecov/c/github/your-org/nucleo?style=flat-square)](https://codecov.io/gh/your-org/nucleo)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/ReleaseOnMonday/nucleo/ci.yml?style=flat-square&label=tests)](https://github.com/ReleaseOnMonday/nucleo/actions)
+[![Code Coverage](https://img.shields.io/codecov/c/github/ReleaseOnMonday/nucleo?style=flat-square)](https://codecov.io/gh/ReleaseOnMonday/nucleo)
 ```
 
 ## Troubleshooting
