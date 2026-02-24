@@ -1,7 +1,6 @@
 """Bash command execution tool."""
 
 import asyncio
-import subprocess
 from typing import Any, Dict
 
 from .base import Tool

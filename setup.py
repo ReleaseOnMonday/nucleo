@@ -24,8 +24,10 @@ setup(
     extras_require={
         "telegram": ["python-telegram-bot>=20.0"],
         "discord": ["discord.py>=2.3.0"],
-        "search": ["brave-search-python>=0.1.0"],
-        "dev": ["pytest>=8.0.0", "ruff>=0.3.0"],
+        # Note: brave-search has dependency conflict with core's httpx>=0.27.0
+        # Install separately in isolated venv: pip install brave-search==0.1.8
+        "search": ["brave-search==0.1.8"],
+        "dev": ["pytest>=8.0.0", "ruff>=0.3.0", "pytest-cov>=5.0.0"],
     },
     entry_points={
         "console_scripts": [

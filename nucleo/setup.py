@@ -4,7 +4,7 @@ import os
 import json
 import subprocess
 from pathlib import Path
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any
 
 
 class SetupWizard:
@@ -79,7 +79,7 @@ class SetupWizard:
         try:
             subprocess.run(['bash', '--version'], capture_output=True, check=True)
             print("✅ Bash available (can execute shell commands)")
-        except:
+        except Exception:
             print("⚠️  Bash not available")
         
         print()
@@ -254,7 +254,7 @@ class SetupWizard:
                     # Merge with existing
                     existing.update(self.config)
                     self.config = existing
-                except:
+                except Exception:
                     pass
             
             # Save config
@@ -292,7 +292,7 @@ class SetupWizard:
             import httpx
             response = httpx.get('http://localhost:11434/api/tags', timeout=2)
             return response.status_code == 200
-        except:
+        except Exception:
             return False
     
     def get_input(self, prompt: str, default: str = '') -> str:

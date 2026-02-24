@@ -1,10 +1,9 @@
 """Basic tests for Nucleo."""
 
 import pytest
-from pathlib import Path
 import json
 
-from nucleo import Config, Agent
+from nucleo import Config
 from nucleo.tools import BashTool, FilesTool
 
 

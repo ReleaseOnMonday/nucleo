@@ -1,10 +1,8 @@
 """Discord channel implementation for Nucleo gateway."""
 
-import asyncio
 import logging
 from typing import Optional
 import discord
-from discord.ext import commands
 
 from ..config import Config
 from .base import BaseChannel

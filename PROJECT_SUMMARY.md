@@ -190,7 +190,7 @@ Nucleo is the **best balance** for most users:
 ### Optional
 - `python-telegram-bot>=20.0` - Telegram
 - `discord.py>=2.3.0` - Discord
-- `brave-search-python>=0.1.0` - Web search
+- `brave-search==0.1.8` - Web search *(install in separate venv - see requirements-optional.txt)*
 
 ### Development
 - `pytest>=8.0.0` - Testing

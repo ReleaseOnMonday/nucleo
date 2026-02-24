@@ -101,6 +101,8 @@ For code coverage badges to work:
 pip install -r requirements.txt
 ```
 
+> 💡 **Optional**: For web search support, see [optional dependencies](#optional-dependencies) section
+
 ### 2. Configure
 
 Create `config.json` from the example:
@@ -447,12 +449,28 @@ Guides through:
 - `discord.py` - Discord support
 
 **Tools (optional)**
-- `brave-search` - Web search
+- `brave-search` - Web search *(requires separate install - see [requirements-optional.txt](requirements-optional.txt) due to dependency conflicts)*
 
 **Development**
 - `pytest` - Testing framework
 - `pytest-cov` - Code coverage reporting
 - `ruff` - Code linting and formatting
+
+### Optional Dependencies
+
+To use web search functionality, install from [requirements-optional.txt](requirements-optional.txt):
+
+```bash
+# Option 1: Create isolated venv for web search
+python -m venv venv-search
+source venv-search/bin/activate  # or `venv-search\Scripts\activate` on Windows
+pip install -r requirements-optional.txt
+
+# Option 2: Install compatible versions directly
+pip install httpx==0.25.2 brave-search==0.1.8
+```
+
+⚠️ Note: `brave-search` has a tight dependency on `httpx<0.26.0`, which conflicts with the main project's `httpx>=0.27.0` requirement for newer async features. Using an isolated venv is recommended.
 
 ---
 
@@ -533,8 +551,8 @@ Nucleo uses JSON configuration. Key sections:
       "max_output_length": 10000
     },
     "search": {
-      "enabled": true,
-      "api_key": "your-brave-search-key",
+      "enabled": false,
+      "api_key": "your-brave-search-key-optional",
       "max_results": 5
     },
     "files": {

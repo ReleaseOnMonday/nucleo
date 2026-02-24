@@ -1,9 +1,8 @@
 """Task scheduler for autonomous periodic actions (heartbeat system)."""
 
-import re
 import asyncio
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional
 from datetime import datetime
 import logging
 
@@ -174,7 +173,7 @@ class Task:
                 logger.warning(f"No executor provided for task: {self.name}")
                 return False
             
-            result = await executor(self)
+            await executor(self)
             self.last_run = datetime.now()
             self.execution_count += 1
             self.last_error = None

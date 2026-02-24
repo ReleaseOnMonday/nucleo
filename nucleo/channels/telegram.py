@@ -1,9 +1,8 @@
 """Telegram channel implementation for Nucleo gateway."""
 
-import asyncio
 import logging
 from typing import Optional
-from telegram import Update, error
+from telegram import Update
 from telegram.ext import Application, ContextTypes, MessageHandler, filters, CommandHandler
 
 from ..config import Config
