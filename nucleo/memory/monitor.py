@@ -35,7 +35,7 @@ from collections import deque
 from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import Enum
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, Optional
 
 logger = logging.getLogger(__name__)
 

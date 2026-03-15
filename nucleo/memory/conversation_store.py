@@ -18,19 +18,14 @@ Usage:
 
 import asyncio
 import hashlib
-import json
-import mmap
-import os
 import sqlite3
-import struct
 import threading
 import time
 import zlib
 from contextlib import contextmanager
-from dataclasses import dataclass, field
-from datetime import datetime
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 from collections import OrderedDict
 import logging
 
@@ -311,7 +306,6 @@ class ConversationStore:
                 compressed_content = zlib.compress(
                     content_bytes, self.compression_level
                 )
-                compressed_size = len(compressed_content)
                 
                 cursor.execute(
                     """

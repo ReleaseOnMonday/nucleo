@@ -27,14 +27,12 @@ Usage:
         obj['key'] = 'value'  # Automatically returned
 """
 
-import asyncio
 import logging
 import threading
-import time
 from collections import deque
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass
-from typing import Any, Callable, Deque, Dict, Generic, List, Optional, TypeVar
+from typing import Any, Callable, Deque, Dict, Generic, Optional, TypeVar
 
 logger = logging.getLogger(__name__)
 
