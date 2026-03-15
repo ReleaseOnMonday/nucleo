@@ -13,8 +13,6 @@ Usage:
     python -m pytest tests/test_memory.py -v --benchmark
 """
 
-import asyncio
-import gc
 import os
 import sys
 import tempfile
@@ -27,7 +25,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from nucleo.memory import (
     ConversationStore,
-    ConversationStats,
     get_lazy_importer,
     get_standard_pools,
     init_gc_for_edge,
@@ -36,11 +33,9 @@ from nucleo.memory import (
     get_memory_budgets,
     LazyModule,
     ObjectPool,
-    MemoryMonitor,
     QueryComplexityAnalyzer,
     MemoryBudgets,
     ComplexityLevel,
-    MemoryPressure,
 )
 
 
@@ -187,7 +182,7 @@ class TestLazyLoader:
     def test_lazy_module_loading(self):
         """Test that lazy module loads on access."""
         lazy_json = LazyModule("json")
-        
+
         # Access should trigger loading
         dumps = lazy_json.dumps
         assert lazy_json._module is not None
@@ -203,9 +198,6 @@ class TestLazyLoader:
     def test_lazy_module_expensive(self):
         """Test that expensive modules are not loaded immediately."""
         importer = get_lazy_importer()
-
-        # Check if module is in lazy list
-        stats_before = importer.get_stats()
 
         # Access a lazy module
         json_module = importer.lazy_httpx
@@ -230,11 +222,18 @@ class TestObjectPool:
         # Acquire object
         obj = pool.acquire()
         assert isinstance(obj, dict)
+        obj_id = id(obj)
 
         # Release object
         pool.release(obj)
 
-        # Stats should show reuse
+        # Stats should show object available
+        stats = pool.get_stats()
+        assert stats.currently_available == 1
+
+        # Acquire again - this time should reuse
+        obj2 = pool.acquire()
+        assert id(obj2) == obj_id  # Same object
         stats = pool.get_stats()
         assert stats.total_reused == 1
 
@@ -460,7 +459,7 @@ class TestMemoryBenchmarks:
 
             stats = await store.get_statistics()
 
-            print(f"\nConversationStore throughput: {1000/elapsed:.0f} ops/sec")
+            print(f"\nConversationStore throughput: {1000 / elapsed:.0f} ops/sec")
             print(f"Messages in memory: {stats.messages_in_memory}")
             print(f"Messages archived: {stats.messages_archived}")
             print(f"Compression ratio: {stats.compression_ratio:.1f}x")
@@ -485,7 +484,7 @@ class TestMemoryBenchmarks:
 
         elapsed = time.time() - start
 
-        print(f"\nQuery analysis throughput: {1000/elapsed:.0f} ops/sec")
+        print(f"\nQuery analysis throughput: {1000 / elapsed:.0f} ops/sec")
 
     def test_object_pool_performance(self):
         """Benchmark object pool operations."""
@@ -502,7 +501,7 @@ class TestMemoryBenchmarks:
 
         stats = pool.get_stats()
 
-        print(f"\nObjectPool throughput: {10000/elapsed:.0f} ops/sec")
+        print(f"\nObjectPool throughput: {10000 / elapsed:.0f} ops/sec")
         print(f"Reuse ratio: {stats.reuse_ratio:.1%}")
 
 

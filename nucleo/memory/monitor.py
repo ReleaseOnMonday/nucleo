@@ -13,13 +13,13 @@ Tracks:
 Usage:
     monitor = MemoryMonitor(memory_limit_mb=100)
     monitor.enable()
-    
+
     # Check memory status
     status = monitor.get_status()
-    
+
     # Set memory budget for component
     monitor.set_component_budget("agent", 50)  # 50MB max
-    
+
     # Use budget tracker
     with monitor.track("agent"):
         # Perform memory-intensive operation
@@ -91,17 +91,17 @@ class MemoryStatus:
 class MemoryMonitor:
     """
     Real-time memory monitoring for edge systems.
-    
+
     Features:
     - Tracks process memory usage (RSS, VMS)
     - Monitors memory trends
     - Per-component budgeting
     - Automatic cleanup triggers
     - Memory pressure alerts
-    
+
     Memory Impact: ~2-3MB per monitor instance
     Thread-safe: Uses locks for concurrent access
-    
+
     Typical workflow:
     1. Create monitor with memory limit
     2. Call enable() to start background monitoring
@@ -127,7 +127,7 @@ class MemoryMonitor:
     ):
         """
         Initialize memory monitor.
-        
+
         Args:
             memory_limit_mb: Maximum memory allowed for process
             monitor_interval_seconds: How often to sample memory
@@ -268,10 +268,10 @@ class MemoryMonitor:
     def get_status(self) -> MemoryStatus:
         """
         Get current memory status.
-        
+
         Returns:
             MemoryStatus with comprehensive information
-        
+
         Memory Impact: ~0 (returns references to existing data)
         """
         with self._lock:
@@ -321,7 +321,9 @@ class MemoryMonitor:
         trend_values = [s.rss_mb for s in recent]
 
         # Calculate slope
-        deltas = [trend_values[i] - trend_values[i - 1] for i in range(1, len(trend_values))]
+        deltas = [
+            trend_values[i] - trend_values[i - 1] for i in range(1, len(trend_values))
+        ]
         avg_delta = sum(deltas) / len(deltas)
 
         if avg_delta > 1:  # Growing by >1MB average
@@ -356,16 +358,14 @@ class MemoryMonitor:
 
         return remaining_mb / growth_rate_mb_per_s
 
-    def set_component_budget(
-        self, component: str, budget_mb: float
-    ) -> ComponentMemory:
+    def set_component_budget(self, component: str, budget_mb: float) -> ComponentMemory:
         """
         Set memory budget for a component.
-        
+
         Args:
             component: Component name
             budget_mb: Maximum MB allowed for this component
-        
+
         Returns:
             ComponentMemory tracking object
         """
@@ -390,7 +390,7 @@ class MemoryMonitor:
     def track(self, component: str, budget_mb: Optional[float] = None):
         """
         Context manager to track memory for a component.
-        
+
         Usage:
             with monitor.track("my_component", budget_mb=50):
                 perform_operation()
@@ -467,11 +467,11 @@ def get_memory_monitor(
 ) -> MemoryMonitor:
     """
     Create and optionally enable a memory monitor.
-    
+
     Args:
         memory_limit_mb: Memory limit in MB
         enable: Whether to start monitoring immediately
-    
+
     Returns:
         MemoryMonitor instance
     """
@@ -484,13 +484,13 @@ def get_memory_monitor(
 def detect_optimal_memory_limit() -> float:
     """
     Detect optimal memory limit for this device.
-    
+
     Uses system memory to determine appropriate limit:
     - RPi Zero (512MB): 100MB
     - RPi 3 (1GB): 200MB
     - RPi 4 (2GB+): 300-400MB
     - Server (8GB+): 1000MB+
-    
+
     Returns:
         Recommended memory limit in MB
     """

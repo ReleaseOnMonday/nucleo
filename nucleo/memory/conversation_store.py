@@ -35,6 +35,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Message:
     """Represents a single message with metadata."""
+
     session_id: str
     message_id: str
     role: str
@@ -66,6 +67,7 @@ class Message:
 @dataclass
 class ConversationStats:
     """Statistics about conversation storage."""
+
     total_messages: int = 0
     messages_in_memory: int = 0
     messages_archived: int = 0
@@ -80,7 +82,7 @@ class ConversationStats:
 class ConversationStore:
     """
     Memory-mapped conversation storage with compression.
-    
+
     Key optimizations:
     - In-memory LRU cache for recent messages (configurable)
     - zlib level 9 compression for archived messages
@@ -88,7 +90,7 @@ class ConversationStore:
     - Efficient message deduplication via content hashing
     - Automatic archival triggers based on time/size thresholds
     - Thread-safe operations using locks
-    
+
     Memory Impact: ~100 bytes per in-memory message vs ~1KB before optimization
     """
 
@@ -103,7 +105,7 @@ class ConversationStore:
     ):
         """
         Initialize conversation store.
-        
+
         Args:
             max_memory_messages: Maximum messages to keep in RAM per session
             db_path: Path to SQLite database (default: ./conversations.db)
@@ -122,33 +124,31 @@ class ConversationStore:
         # In-memory storage (LRU per session)
         self._memory_storage: Dict[str, OrderedDict[str, Message]] = {}
         self._lock = threading.RLock()
-        
+
         # Content hash tracking for deduplication
         self._content_hashes: Dict[str, str] = {}  # hash -> message_id
         self._dedup_savings = 0
-        
+
         # Statistics
         self._last_cleanup = time.time()
         self._stats_cache: Optional[ConversationStats] = None
         self._stats_cache_time = 0.0
-        
+
         # Initialize database
         self._init_database()
-        
+
         # Start background cleanup thread
-        self._cleanup_thread = threading.Thread(
-            target=self._cleanup_loop, daemon=True
-        )
+        self._cleanup_thread = threading.Thread(target=self._cleanup_loop, daemon=True)
         self._cleanup_running = True
         self._cleanup_thread.start()
 
     def _init_database(self) -> None:
         """Initialize SQLite database with optimized schema."""
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         with self._get_db() as conn:
             cursor = conn.cursor()
-            
+
             # Main messages table
             cursor.execute(
                 """
@@ -164,19 +164,18 @@ class ConversationStore:
                 )
                 """
             )
-            
+
             # Index for fast session lookup
             cursor.execute(
                 "CREATE INDEX IF NOT EXISTS idx_session_timestamp "
                 "ON messages(session_id, timestamp DESC)"
             )
-            
+
             # Index for cleanup queries
             cursor.execute(
-                "CREATE INDEX IF NOT EXISTS idx_created_at "
-                "ON messages(created_at)"
+                "CREATE INDEX IF NOT EXISTS idx_created_at ON messages(created_at)"
             )
-            
+
             # Deduplication table (optional)
             if self.enable_dedup:
                 cursor.execute(
@@ -188,7 +187,7 @@ class ConversationStore:
                     )
                     """
                 )
-            
+
             # Metadata table
             cursor.execute(
                 """
@@ -199,7 +198,7 @@ class ConversationStore:
                 )
                 """
             )
-            
+
             conn.commit()
 
     @contextmanager
@@ -215,42 +214,40 @@ class ConversationStore:
         finally:
             conn.close()
 
-    async def add_message(
-        self, session_id: str, message_data: Dict[str, Any]
-    ) -> str:
+    async def add_message(self, session_id: str, message_data: Dict[str, Any]) -> str:
         """
         Add a message to the conversation.
-        
+
         Automatically archives old messages if exceeding max_memory_messages.
         Deduplicates content if enabled.
-        
+
         Args:
             session_id: Unique session identifier
             message_data: {"role": "user|assistant", "content": "..."}
-        
+
         Returns:
             Message ID
-        
+
         Memory Impact: ~100 bytes in RAM, multiple KBs to disk on archive
         """
         # Generate message ID and timestamp
         message_id = f"{session_id}_{int(time.time() * 1000000)}"
         timestamp = time.time()
-        
+
         # Check for duplicates if enabled
         if self.enable_dedup:
             content_hash = hashlib.sha256(
                 message_data["content"].encode("utf-8")
             ).hexdigest()
-            
+
             if content_hash in self._content_hashes:
                 # Duplicate found - don't store, just count it
                 self._dedup_savings += len(message_data["content"].encode("utf-8"))
                 logger.debug(f"Deduplicated message: {content_hash}")
                 return self._content_hashes[content_hash]
-            
+
             self._content_hashes[content_hash] = message_id
-        
+
         # Create message object
         message = Message(
             session_id=session_id,
@@ -259,43 +256,48 @@ class ConversationStore:
             content=message_data.get("content", ""),
             timestamp=timestamp,
         )
-        
+
         with self._lock:
             # Initialize session storage if needed
             if session_id not in self._memory_storage:
                 self._memory_storage[session_id] = OrderedDict()
-            
+
             # Add to in-memory storage
             self._memory_storage[session_id][message_id] = message
-            
-            # Archive oldest messages if exceeding threshold
-            if len(self._memory_storage[session_id]) > self.archive_threshold:
-                await self._archive_oldest_messages(session_id)
-        
+
+            # Archive oldest messages if exceeding max_memory_messages threshold
+            if len(self._memory_storage[session_id]) > self.max_memory_messages:
+                excess = (
+                    len(self._memory_storage[session_id]) - self.max_memory_messages
+                )
+                await self._archive_oldest_messages(session_id, count=excess)
+
         # Invalidate stats cache
         self._stats_cache = None
-        
+
         return message_id
 
     async def _archive_oldest_messages(self, session_id: str, count: int = 5) -> None:
         """
         Archive oldest messages to disk to reduce RAM usage.
-        
+
         Memory Impact: Frees ~500 bytes RAM per message (in typical case)
         Disk Impact: Adds ~50-100 bytes per message (compressed)
         """
         to_archive = []
-        
+
         with self._lock:
             session_messages = self._memory_storage[session_id]
             # Get oldest N messages
-            for _ in range(min(count, len(session_messages) - self.max_memory_messages)):
+            for _ in range(
+                min(count, len(session_messages) - self.max_memory_messages)
+            ):
                 msg_id, message = session_messages.popitem(last=False)
                 to_archive.append(message)
-        
+
         if not to_archive:
             return
-        
+
         # Compress and write to database
         with self._get_db() as conn:
             cursor = conn.cursor()
@@ -306,7 +308,7 @@ class ConversationStore:
                 compressed_content = zlib.compress(
                     content_bytes, self.compression_level
                 )
-                
+
                 cursor.execute(
                     """
                     INSERT OR REPLACE INTO messages
@@ -324,9 +326,9 @@ class ConversationStore:
                         time.time(),
                     ),
                 )
-            
+
             conn.commit()
-        
+
         logger.debug(
             f"Archived {len(to_archive)} messages for session {session_id}, "
             f"freed ~{len(to_archive) * 500} bytes RAM"
@@ -337,20 +339,20 @@ class ConversationStore:
     ) -> List[Dict[str, Any]]:
         """
         Get recent N messages in-memory. Fast path - no disk access.
-        
+
         Args:
             session_id: Session identifier
             n: Number of recent messages to retrieve
-        
+
         Returns:
             List of messages in chronological order
-        
+
         Memory Impact: None (returns references to existing messages)
         """
         with self._lock:
             if session_id not in self._memory_storage:
                 return []
-            
+
             messages = list(self._memory_storage[session_id].values())
             # Return last N messages
             return [m.to_dict() for m in messages[-n:]]
@@ -363,19 +365,19 @@ class ConversationStore:
     ) -> List[Dict[str, Any]]:
         """
         Get archived messages from disk (slower, requires decompression).
-        
+
         Args:
             session_id: Session identifier
             limit: Maximum messages to retrieve
             offset: Offset for pagination
-        
+
         Returns:
             List of decompressed messages
-        
+
         Memory Impact: Temporary spikes during decompression (~1MB for 100 messages)
         """
         messages = []
-        
+
         with self._get_db() as conn:
             cursor = conn.cursor()
             cursor.execute(
@@ -388,10 +390,10 @@ class ConversationStore:
                 """,
                 (session_id, limit, offset),
             )
-            
+
             for row in cursor.fetchall():
                 msg_id, sess_id, role, content, compressed, orig_size, ts = row
-                
+
                 # Decompress if needed
                 if compressed:
                     try:
@@ -399,18 +401,20 @@ class ConversationStore:
                     except Exception as e:
                         logger.error(f"Failed to decompress message {msg_id}: {e}")
                         content = "[Decompression failed]"
-                
-                messages.append({
-                    "session_id": sess_id,
-                    "message_id": msg_id,
-                    "role": role,
-                    "content": content,
-                    "timestamp": ts,
-                    "compressed": bool(compressed),
-                    "original_size": orig_size,
-                    "compressed_size": len(content),
-                })
-        
+
+                messages.append(
+                    {
+                        "session_id": sess_id,
+                        "message_id": msg_id,
+                        "role": role,
+                        "content": content,
+                        "timestamp": ts,
+                        "compressed": bool(compressed),
+                        "original_size": orig_size,
+                        "compressed_size": len(content),
+                    }
+                )
+
         return messages
 
     async def get_conversation_context(
@@ -420,22 +424,22 @@ class ConversationStore:
     ) -> List[Dict[str, Any]]:
         """
         Get conversation context for LLM processing.
-        
+
         Returns a sliding window of recent messages for context,
         efficiently combining in-memory and archived messages.
-        
+
         Args:
             session_id: Session identifier
             context_size: Number of recent exchanges to include
-        
+
         Returns:
             Combined list of recent + some archived messages
-        
+
         Memory Impact: Minimal - streaming pattern used in agent
         """
         # Get recent messages from RAM
         recent = await self.get_recent_messages(session_id, n=context_size * 2)
-        
+
         # If we don't have enough, fetch some archived ones
         if len(recent) < context_size:
             archived = await self.get_archived_messages(
@@ -444,16 +448,16 @@ class ConversationStore:
                 offset=0,
             )
             recent = archived + recent
-        
+
         return recent
 
     async def get_statistics(self) -> ConversationStats:
         """
         Get storage statistics with caching (10 second TTL).
-        
+
         Returns:
             ConversationStats with memory/disk usage details
-        
+
         Useful metrics:
         - Memory used: Total RAM consumed by in-memory messages
         - Disk used: Compressed size of archived messages
@@ -461,87 +465,87 @@ class ConversationStore:
         - Dedup savings: Bytes saved by deduplication
         """
         now = time.time()
-        
+
         # Return cached stats if fresh enough
         if self._stats_cache and (now - self._stats_cache_time) < 10:
             return self._stats_cache
-        
+
         stats = ConversationStats(last_cleanup=self._last_cleanup)
-        
+
         with self._lock:
             # Count in-memory messages
             for session_messages in self._memory_storage.values():
                 for message in session_messages.values():
                     stats.messages_in_memory += 1
                     stats.memory_used_bytes += len(message.content.encode("utf-8"))
-            
+
             stats.total_sessions = len(self._memory_storage)
-        
+
         # Count archived messages
         with self._get_db() as conn:
             cursor = conn.cursor()
-            
+
             cursor.execute(
                 "SELECT COUNT(*), SUM(original_size), SUM(LENGTH(content)) "
                 "FROM messages WHERE compressed = 1"
             )
             count, orig_size, comp_size = cursor.fetchone()
-            
+
             stats.messages_archived = count or 0
-            stats.disk_used_bytes = (comp_size or 0)
-            
+            stats.disk_used_bytes = comp_size or 0
+
             if orig_size and comp_size:
                 stats.compression_ratio = orig_size / comp_size
-        
+
         stats.total_messages = stats.messages_in_memory + stats.messages_archived
         stats.deduplication_savings = self._dedup_savings
-        
+
         # Cache stats
         self._stats_cache = stats
         self._stats_cache_time = now
-        
+
         return stats
 
     async def delete_session(self, session_id: str) -> None:
         """
         Delete all messages for a session (frees memory immediately).
-        
+
         Args:
             session_id: Session identifier to delete
-        
+
         Memory Impact: Frees all RAM for this session immediately
         """
         with self._lock:
             if session_id in self._memory_storage:
                 del self._memory_storage[session_id]
-        
+
         with self._get_db() as conn:
             cursor = conn.cursor()
             cursor.execute("DELETE FROM messages WHERE session_id = ?", (session_id,))
             conn.commit()
-        
+
         logger.info(f"Deleted session {session_id}")
         self._stats_cache = None
 
     async def cleanup_old_conversations(self, max_age_seconds: int = 86400) -> int:
         """
         Clean up old conversations (default 24 hours old).
-        
+
         Args:
             max_age_seconds: Delete messages older than this many seconds
-        
+
         Returns:
             Number of messages deleted
-        
+
         Memory Impact: Frees disk space, small RAM if session was in memory
         """
         cutoff_time = time.time() - max_age_seconds
-        
+
         deleted = 0
-        
+
         with self._get_db() as conn:
             cursor = conn.cursor()
-            
+
             # Get sessions to potentially delete
             cursor.execute(
                 """
@@ -552,9 +556,9 @@ class ConversationStore:
                 """,
                 (cutoff_time,),
             )
-            
+
             sessions_to_check = cursor.fetchall()
-            
+
             for session_id, count, max_ts in sessions_to_check:
                 # Only delete if entire session is old
                 cursor.execute(
@@ -562,30 +566,30 @@ class ConversationStore:
                     (session_id,),
                 )
                 latest_ts = cursor.fetchone()[0]
-                
+
                 if latest_ts < cutoff_time:
                     cursor.execute(
                         "DELETE FROM messages WHERE session_id = ?",
                         (session_id,),
                     )
                     deleted += cursor.rowcount
-            
+
             conn.commit()
-        
+
         # Also clean up in-memory storage
         with self._lock:
             to_delete = []
             for session_id in self._memory_storage:
                 if session_id not in [s[0] for s in sessions_to_check]:
                     to_delete.append(session_id)
-            
+
             for session_id in to_delete:
                 del self._memory_storage[session_id]
-        
+
         logger.info(f"Cleaned up {deleted} old messages")
         self._stats_cache = None
         self._last_cleanup = time.time()
-        
+
         return deleted
 
     def _cleanup_loop(self) -> None:
@@ -622,7 +626,7 @@ def estimate_memory_savings(
 ) -> Dict[str, int]:
     """
     Estimate memory savings from optimizations.
-    
+
     Example:
         savings = estimate_memory_savings(1000, 500, 9.0, 0.8)
         # Returns: {
@@ -633,17 +637,17 @@ def estimate_memory_savings(
         # }
     """
     before = total_messages * average_message_size
-    
+
     # Only keep 20% in memory (default 10 messages out of 50 total)
     in_memory = int(total_messages * (1 - archived_percentage))
     in_memory_size = in_memory * average_message_size
-    
+
     # Compressed archived messages
     archived = int(total_messages * archived_percentage)
     compressed_size = int((archived * average_message_size) / compression_ratio)
-    
+
     after = in_memory_size + compressed_size
-    
+
     return {
         "before": before,
         "after": after,

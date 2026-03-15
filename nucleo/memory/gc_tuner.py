@@ -24,10 +24,10 @@ Edge-optimized thresholds:
 Usage:
     gc_tuner = GCTuner(mode="edge")  # or "server" or "conservative"
     gc_tuner.enable()
-    
+
     # After large operations
     gc_tuner.collect()
-    
+
     # In time-critical sections
     with gc_tuner.disabled():
         # GC temporarily disabled
@@ -75,6 +75,10 @@ class GCThresholds:
         """Convert to tuple for gc.set_threshold()."""
         return (self.gen0, self.gen1, self.gen2)
 
+    def copy(self) -> "GCThresholds":
+        """Create a copy of thresholds."""
+        return GCThresholds(gen0=self.gen0, gen1=self.gen1, gen2=self.gen2)
+
 
 @dataclass
 class GCStats:
@@ -93,15 +97,15 @@ class GCStats:
 class GCTuner:
     """
     Garbage collection optimizer for memory-constrained systems.
-    
+
     Adapts GC behavior based on system characteristics:
     - EDGE mode: Aggressive collection (more frequent, smaller pauses)
     - SERVER mode: Balanced (default Python behavior)
     - CONSERVATIVE mode: Minimal collection (only when necessary)
-    
+
     Memory Impact: 1-3% reduction in peak memory through better collection
     Performance Impact: 5-10% reduction in GC pause times on RPi
-    
+
     Thread-safe: Uses locks for concurrent access
     """
 
@@ -121,7 +125,7 @@ class GCTuner:
     ):
         """
         Initialize GC tuner.
-        
+
         Args:
             mode: Tuning mode (EDGE, SERVER, CONSERVATIVE, CUSTOM)
             custom_thresholds: Custom thresholds (required if mode=CUSTOM)
@@ -138,7 +142,11 @@ class GCTuner:
                 raise ValueError("custom_thresholds required for CUSTOM mode")
             self.thresholds = custom_thresholds
         else:
-            self.thresholds = self.THRESHOLD_PRESETS[mode].copy() if mode in self.THRESHOLD_PRESETS else GCThresholds(700, 10, 10)
+            self.thresholds = (
+                self.THRESHOLD_PRESETS[mode].copy()
+                if mode in self.THRESHOLD_PRESETS
+                else GCThresholds(700, 10, 10)
+            )
 
         # GC state
         self._enabled = True
@@ -180,10 +188,10 @@ class GCTuner:
     def collect(self) -> int:
         """
         Perform garbage collection immediately.
-        
+
         Returns:
             Number of objects collected
-        
+
         Useful after:
         - Large data loads
         - Conversation archival
@@ -203,9 +211,7 @@ class GCTuner:
                 self._stats.collection_time_ms += elapsed_ms
 
             if self.debug or elapsed_ms > 100:  # Warn if collection took >100ms
-                logger.debug(
-                    f"GC collected {collected} objects in {elapsed_ms:.1f}ms"
-                )
+                logger.debug(f"GC collected {collected} objects in {elapsed_ms:.1f}ms")
 
             return collected
 
@@ -213,7 +219,7 @@ class GCTuner:
     def disabled(self):
         """
         Context manager to temporarily disable GC.
-        
+
         Usage:
             with gc_tuner.disabled():
                 # GC disabled during time-critical operation
@@ -232,10 +238,10 @@ class GCTuner:
     def frozen(self):
         """
         Context manager to freeze long-lived objects.
-        
+
         Freezing objects exempts them from GC, which is useful
         for objects that are created once and never collected.
-        
+
         Usage:
             with gc_tuner.frozen():
                 config = load_config()
@@ -296,7 +302,7 @@ class GCTuner:
     def find_unreachable(self, limit: int = 10) -> list:
         """
         Find unreachable objects (garbage).
-        
+
         Useful for debugging memory leaks.
         Returns up to 'limit' unreachable objects.
         """
@@ -307,11 +313,11 @@ class GCTuner:
     def find_circular_refs(self, obj: object, depth: int = 2) -> list:
         """
         Find potential circular references from an object.
-        
+
         Args:
             obj: Object to inspect
             depth: How deep to traverse
-        
+
         Returns:
             List of objects involved in potential cycles
         """
@@ -360,16 +366,14 @@ _global_gc_tuner: Optional[GCTuner] = None
 _gc_tuner_lock = threading.Lock()
 
 
-def get_gc_tuner(
-    mode: GCMode = GCMode.EDGE, enable_stats: bool = True
-) -> GCTuner:
+def get_gc_tuner(mode: GCMode = GCMode.EDGE, enable_stats: bool = True) -> GCTuner:
     """
     Get or create global GC tuner instance.
-    
+
     Args:
         mode: Tuning mode
         enable_stats: Enable statistics tracking
-    
+
     Returns:
         GCTuner instance
     """
@@ -387,9 +391,9 @@ def get_gc_tuner(
 def init_gc_for_edge() -> GCTuner:
     """
     Initialize garbage collection optimized for edge computing.
-    
+
     Convenience function that sets up GC with edge-optimized defaults.
-    
+
     Returns:
         Configured GCTuner instance
     """
@@ -402,7 +406,7 @@ def init_gc_for_edge() -> GCTuner:
 def estimate_gc_memory_savings() -> Dict[str, str]:
     """
     Estimate memory savings from optimized GC.
-    
+
     Returns:
         Dictionary with estimated savings
     """

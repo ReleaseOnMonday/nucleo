@@ -29,7 +29,7 @@ Usage:
         get_query_analyzer,
         get_memory_budgets,
     )
-    
+
     # Setup
     await store = ConversationStore(max_memory_messages=10)
     lazy = get_lazy_importer()
@@ -38,16 +38,16 @@ Usage:
     monitor = get_memory_monitor(memory_limit_mb=100)
     analyzer = get_query_analyzer()
     budgets = get_memory_budgets(total_mb=100)
-    
+
     # Use throughout the application
     await store.add_message(session_id, message)
-    
+
     complexity = analyzer.analyze(query)
-    
+
     if budgets.request_memory("agent", 10):
         # Process query
         pass
-    
+
     status = monitor.get_status()
     print(f"Memory pressure: {status.pressure}")
 """
@@ -111,7 +111,19 @@ from nucleo.memory.budget import (
     get_memory_budgets,
 )
 
+# Import legacy MemoryManager from parent module for backwards compatibility
+import importlib.util
+
+# Load the parent memory.py module
+parent_path = __import__("pathlib").Path(__file__).parent.parent / "memory.py"
+spec = importlib.util.spec_from_file_location("_legacy_memory", parent_path)
+_legacy_memory = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(_legacy_memory)
+MemoryManager = _legacy_memory.MemoryManager
+
 __all__ = [
+    # Legacy Memory Manager
+    "MemoryManager",
     # Conversation Store
     "ConversationStore",
     "ConversationStats",

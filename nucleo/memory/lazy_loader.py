@@ -17,13 +17,13 @@ Total potential savings: ~12-15MB at startup
 Usage:
     # Import the lazy loader
     from nucleo.memory.lazy_loader import LazyImporter
-    
+
     # Create a wrapper
     lazy_imports = LazyImporter()
-    
+
     # Use lazy imports - module loads on first access
     async_client = lazy_imports.httpx.AsyncClient()
-    
+
     # Or use the shorthand
     lazy_imports.ensure_loaded("httpx")
     import httpx  # Now it's safe to use
@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 class LazyModule:
     """
     Wrapper that defers module loading until first access.
-    
+
     Memory Impact: ~100 bytes overhead per lazy module vs ~1-10MB actual module
     """
 
@@ -101,21 +101,21 @@ class LazyModule:
 class LazyImporter:
     """
     Central lazy import system.
-    
+
     Creates lazy wrappers for modules that are expensive to load.
     Automatically determines which modules should be lazy vs eager.
-    
+
     Memory Impact: Reduces startup memory by ~25% through deferred loading
-    
+
     Usage:
         lazy = LazyImporter()
-        
+
         # Access lazy modules
         client = lazy.httpx.AsyncClient()
-        
+
         # Ensure a module is loaded
         lazy.ensure_loaded("pandas")
-        
+
         # Get stats
         stats = lazy.get_stats()
     """
@@ -126,7 +126,6 @@ class LazyImporter:
         "httpx",
         "aiohttp",
         "requests",
-        
         # AI/ML libraries
         "anthropic",  # 2-3MB
         "openai",  # 2-3MB
@@ -136,31 +135,25 @@ class LazyImporter:
         "sklearn",  # 20-50MB
         "pandas",  # 10-30MB
         "numpy",  # 5-10MB
-        
         # Data processing
         "json",  # 0.5MB (small but commonly deferred)
         "csv",  # 0.2MB
         "xml.etree.ElementTree",  # 0.3MB
-        
         # Time/date
         "datetime",  # 0.3MB
         "dateutil",  # 0.5MB
         "pytz",  # 0.3MB
-        
         # Async utilities
         "asyncio",  # 1MB
         "aiofiles",  # 0.8MB
-        
         # Database
         "sqlite3",  # 2MB
         "psycopg2",  # 3MB
         "pymongo",  # 5MB
-        
         # System utilities
         "subprocess",  # 0.5MB
         "shutil",  # 0.5MB
         "pathlib",  # 0.3MB
-        
         # Configuration
         "configparser",  # 0.3MB
         "tomli",  # 0.2MB
@@ -187,12 +180,25 @@ class LazyImporter:
     def __getattr__(self, name: str) -> Any:
         """
         Get a lazy-loaded or regular module.
-        
+
         If the module name is in LAZY_MODULES, returns a lazy wrapper.
         Otherwise, attempts regular import.
         """
-        # Convert underscores to dots for submodule access
-        module_name = name.replace("_", ".")
+        # Handle lazy_* prefix for explicit lazy loading
+        is_explicit_lazy = False
+        if name.startswith("lazy_"):
+            is_explicit_lazy = True
+            module_name = name[5:]  # Remove "lazy_" prefix
+        else:
+            # Convert underscores to dots for submodule access
+            module_name = name.replace("_", ".")
+
+        # For explicitly requested lazy modules, always return LazyModule wrapper
+        if is_explicit_lazy:
+            with self._lock:
+                if module_name not in self._lazy_wrappers:
+                    self._lazy_wrappers[module_name] = LazyModule(module_name)
+                return self._lazy_wrappers[module_name]
 
         # Check if already in sys.modules (already loaded)
         if module_name in sys.modules:
@@ -219,13 +225,13 @@ class LazyImporter:
     def ensure_loaded(self, module_name: str) -> Any:
         """
         Ensure a module is fully loaded and accessible.
-        
+
         Args:
             module_name: Name of module to load
-        
+
         Returns:
             The loaded module
-        
+
         Useful before using a module in a performance-critical path
         to avoid lazy-loading overhead.
         """
@@ -245,7 +251,7 @@ class LazyImporter:
     def get_stats(self) -> Dict[str, Any]:
         """
         Get lazy loading statistics.
-        
+
         Returns:
             {
                 "lazy_wrappers": 5,
@@ -256,7 +262,8 @@ class LazyImporter:
         """
         with self._lock:
             lazy_loaded = sum(
-                1 for wrapper in self._lazy_wrappers.values()
+                1
+                for wrapper in self._lazy_wrappers.values()
                 if wrapper._module is not None
             )
 
@@ -323,9 +330,9 @@ class DeferredImportError(ImportError):
 def defer_import(module_name: str):
     """
     Decorator to defer module import until first use.
-    
+
     Memory Impact: ~50 bytes overhead per decorator
-    
+
     Usage:
         @defer_import("pandas")
         def use_pandas(data):

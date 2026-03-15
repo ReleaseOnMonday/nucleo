@@ -14,10 +14,10 @@ This enables routing simple queries to fast-path code with minimal memory usage.
 
 Usage:
     analyzer = QueryComplexityAnalyzer()
-    
+
     complexity = analyzer.analyze("What is 2+2?")  # simple
     complexity = analyzer.analyze("Explain quantum entanglement")  # complex
-    
+
     if complexity.level == "simple":
         use_fast_model()
     else:
@@ -59,15 +59,15 @@ class ComplexityAnalysis:
 class QueryComplexityAnalyzer:
     """
     Lightweight query complexity analyzer.
-    
+
     Uses heuristics to categorize queries without ML overhead:
     - Word count and vocabulary richness
     - Keyword matching (explain, analyze, compare, etc.)
     - Query structure (questions, imperatives, etc.)
     - Special characters and technical terms
-    
+
     Not a ML model - pure heuristic analysis (~1-2ms per query)
-    
+
     Memory Impact: ~200KB for keyword dictionaries + analyzer state
     """
 
@@ -163,13 +163,13 @@ class QueryComplexityAnalyzer:
     def analyze(self, query: str) -> ComplexityAnalysis:
         """
         Analyze query complexity.
-        
+
         Args:
             query: User query string
-        
+
         Returns:
             ComplexityAnalysis with level and details
-        
+
         Processing Time: ~1-5ms per query
         Memory Impact: None (uses pre-built dictionaries)
         """
@@ -183,87 +183,83 @@ class QueryComplexityAnalyzer:
         # Calculate basic metrics
         word_count = len(query.split())
         unique_words = len(set(query.lower().split()))
-        
+
         # Analyze query characteristics
         indicators: List[str] = []
-        simple_score = 0.0
-        complex_score = 0.0
+        complexity_score = 0
 
         # Check word count
-        if word_count <= 5:
-            simple_score += 0.3
+        if word_count <= 3:
+            complexity_score -= 2
+            indicators.append("very_short")
+        elif word_count <= 5:
+            complexity_score -= 1
             indicators.append("short")
         elif word_count > 20:
-            complex_score += 0.3
+            complexity_score += 2
             indicators.append("long")
 
         # Check for question markers
         if "?" in query:
             indicators.append("question")
             # Analyze question type
+            is_simple_question = False
             for starter in self.SIMPLE_STARTERS:
                 if query_lower.startswith(starter):
-                    simple_score += 0.2
+                    complexity_score -= 1
+                    is_simple_question = True
                     break
 
-            for starter in self.COMPLEX_STARTERS:
-                if query_lower.startswith(starter):
-                    complex_score += 0.2
-                    break
+            if not is_simple_question:
+                for starter in self.COMPLEX_STARTERS:
+                    if query_lower.startswith(starter):
+                        complexity_score += 1
+                        break
 
         # Check for simple keywords
         for keyword in self.SIMPLE_KEYWORDS:
             if keyword in query_lower:
-                simple_score += 0.15
+                complexity_score -= 1
                 indicators.append(f"simple_keyword:{keyword}")
                 break
 
         # Check for complex keywords
         for keyword in self.COMPLEX_KEYWORDS:
             if keyword in query_lower:
-                complex_score += 0.25
+                complexity_score += 2
                 indicators.append(f"complex_keyword:{keyword}")
 
         # Check for technical terms
         for term in self.TECHNICAL_TERMS:
             if term in query_lower:
-                complex_score += 0.1
+                complexity_score += 1
                 indicators.append(f"technical:{term}")
 
         # Check for multiple sentences (higher complexity)
-        sentence_count = len(re.split(r'[.!?]+', query.strip())) - 1
+        sentence_count = len(re.split(r"[.!?]+", query.strip())) - 1
         if sentence_count > 2:
-            complex_score += 0.2
+            complexity_score += 1
             indicators.append(f"multiple_sentences:{sentence_count}")
 
         # Check vocabulary richness
         if word_count > 0:
             vocab_ratio = unique_words / word_count
             if vocab_ratio > 0.85:  # Very unique words
-                complex_score += 0.1
+                complexity_score += 1
                 indicators.append("high_vocabulary")
 
         # Check for imperative mood (typically more complex)
         if query_lower.endswith(("!", "...", "...")):
-            complex_score += 0.1
+            complexity_score += 1
             indicators.append("emphatic")
 
-        # Normalize scores
-        total_score = simple_score + complex_score
-        if total_score > 0:
-            simple_score /= total_score
-            complex_score /= total_score
-        else:
-            simple_score = 0.5
-            complex_score = 0.5
-
-        # Determine level
-        if complex_score > 0.6 or complex_score > simple_score + 0.3:
-            level = ComplexityLevel.COMPLEX
-            score = complex_score
-        elif simple_score > 0.6 or simple_score > complex_score + 0.3:
+        # Determine level based on final score
+        if complexity_score <= -1:
             level = ComplexityLevel.SIMPLE
-            score = simple_score
+            score = 0.3
+        elif complexity_score >= 2:
+            level = ComplexityLevel.COMPLEX
+            score = 0.9
         else:
             level = ComplexityLevel.MODERATE
             score = 0.5
@@ -315,10 +311,10 @@ class QueryComplexityAnalyzer:
     def estimate_memory_impact(self, analysis: ComplexityAnalysis) -> int:
         """
         Estimate memory impact of processing this query (MB).
-        
+
         Args:
             analysis: Complexity analysis result
-        
+
         Returns:
             Estimated memory needed in MB
         """

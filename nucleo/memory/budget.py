@@ -15,7 +15,7 @@ Usage:
     budgets.allocate("agent", 60)
     budgets.allocate("tools", 30)
     budgets.allocate("cache", 10)
-    
+
     # Use budget
     budget = budgets.get_budget("agent")
     if budget.available_mb < 5:
@@ -80,10 +80,10 @@ class Budget:
     def allocate(self, amount_mb: float) -> bool:
         """
         Allocate memory from budget.
-        
+
         Args:
             amount_mb: Amount to allocate in MB
-        
+
         Returns:
             True if allocation succeeded, False if budget exceeded
         """
@@ -101,7 +101,7 @@ class Budget:
     def deallocate(self, amount_mb: float) -> None:
         """
         Deallocate memory from budget.
-        
+
         Args:
             amount_mb: Amount to deallocate in MB
         """
@@ -138,16 +138,16 @@ class BudgetAllocation:
 class MemoryBudgets:
     """
     Memory budget allocator and enforcer.
-    
+
     Implements a budget-based approach to memory management:
     - Allocate memory budgets to components
     - Monitor usage vs budget
     - Issue warnings when approaching limits
     - Trigger cleanup when exceeding thresholds
-    
+
     Memory Impact: ~1-2MB per budget manager instance
     Thread-safe: Uses locks for concurrent access
-    
+
     Typical workflow:
     1. Create MemoryBudgets with total limit
     2. Allocate budgets to components
@@ -164,7 +164,7 @@ class MemoryBudgets:
     ):
         """
         Initialize memory budgets.
-        
+
         Args:
             total_mb: Total memory budget available
             low_water_mark: Fraction of budget at which warning issued
@@ -198,12 +198,12 @@ class MemoryBudgets:
     ) -> Budget:
         """
         Allocate budget to a component.
-        
+
         Args:
             component: Component name
             budget_mb: Budget in MB
             cleanup_callback: Function to call when cleanup needed
-        
+
         Returns:
             Budget object
         """
@@ -247,12 +247,12 @@ class MemoryBudgets:
     ) -> bool:
         """
         Request memory allocation from a component's budget.
-        
+
         Args:
             component: Component requesting memory
             amount_mb: Amount in MB
             allow_cleanup: Whether to trigger cleanup if needed
-        
+
         Returns:
             True if memory allocated, False if not available
         """
@@ -269,9 +269,7 @@ class MemoryBudgets:
 
             # Budget exceeded - try cleanup if allowed
             if allow_cleanup and component in self._cleanup_callbacks:
-                logger.warning(
-                    f"{component} budget exceeded, triggering cleanup"
-                )
+                logger.warning(f"{component} budget exceeded, triggering cleanup")
 
                 # Call cleanup callbacks
                 for callback in self._cleanup_callbacks[component]:
@@ -293,7 +291,7 @@ class MemoryBudgets:
     def release_memory(self, component: str, amount_mb: float) -> None:
         """
         Release memory back to a component's budget.
-        
+
         Args:
             component: Component releasing memory
             amount_mb: Amount in MB
@@ -309,12 +307,12 @@ class MemoryBudgets:
     ) -> bool:
         """
         Reallocate memory from one component to another.
-        
+
         Args:
             from_component: Source component
             to_component: Destination component
             amount_mb: Amount to reallocate in MB
-        
+
         Returns:
             True if reallocation succeeded
         """
@@ -343,7 +341,9 @@ class MemoryBudgets:
             from_budget.deallocate(amount_mb)
             to_budget.allocate(amount_mb)
 
-            logger.info(f"Reallocated {amount_mb}MB from {from_component} to {to_component}")
+            logger.info(
+                f"Reallocated {amount_mb}MB from {from_component} to {to_component}"
+            )
 
             return True
 
@@ -360,7 +360,7 @@ class MemoryBudgets:
     def check_health(self) -> Dict[str, str]:
         """
         Check health of all budgets.
-        
+
         Returns:
             Dictionary of component -> health status
         """
@@ -396,7 +396,7 @@ class MemoryBudgets:
             summary = (
                 f"Memory Budget Summary:\n"
                 f"  Total: {self.total_mb}MB\n"
-                f"  Used: {total_used:.1f}MB ({total_used/self.total_mb*100:.1f}%)\n"
+                f"  Used: {total_used:.1f}MB ({total_used / self.total_mb * 100:.1f}%)\n"
                 f"  Available: {total_available:.1f}MB\n"
                 f"  Components:\n"
             )
@@ -420,10 +420,10 @@ class MemoryBudgets:
 def get_memory_budgets(total_mb: float = 100) -> MemoryBudgets:
     """
     Get or create global memory budgets instance.
-    
+
     Args:
         total_mb: Total memory budget
-    
+
     Returns:
         MemoryBudgets instance
     """
