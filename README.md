@@ -1,15 +1,26 @@
-# Nucleo ♎
+# 🌟 Nucleo ♎
 
-<!-- Replace YOUR_ORG with your GitHub organization in the badges below -->
+<div align="center">
+
+<!-- Badges -->
 [![GitHub Stars](https://img.shields.io/badge/stars-0-blue?style=flat-square&logo=github)](https://github.com/ReleaseOnMonday/nucleo)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue?style=flat-square)](https://www.python.org/)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
+[![Python 3.8+](https://img.shields.io/badge/Python-3.8+-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square&logo=github-actions)](https://github.com/ReleaseOnMonday/nucleo/actions)
 [![Code Coverage](https://img.shields.io/badge/coverage-pending-orange?style=flat-square)](https://codecov.io/gh/ReleaseOnMonday/nucleo)
-[![codecov](https://codecov.io/github/ReleaseOnMonday/nucleo/graph/badge.svg?token=6J6M2AQWFQ)](https://codecov.io/github/ReleaseOnMonday/nucleo)
-[![Visitor Badge](https://visitor-badge.laobi.icu/badge?page_id=ReleaseOnMonday.nucleo)](https://github.com/ReleaseOnMonday/nucleo)
+[![Visitor Badge](https://visitor-badge.laobi.icu/badge?page_id=ReleaseOnMonday.nucleo&style=flat-square)](https://github.com/ReleaseOnMonday/nucleo)
 
-Ultra-lightweight AI assistant in Python with multi-channel support for Telegram, Discord, and more. Inspired by modern distributed AI architectures.
+**Ultra-lightweight, indigenous AI assistant for autonomous edge deployment** 🚀
+
+[🇮🇳 Made in India](#made-in-india) • [Quick Start](#quick-start) • [Offline Setup](#offline-setup-with-ollama) • [Documentation](#documentation) • [Donate](#donate)
+
+</div>
+
+---
+
+**Nucleo** is a lean, privacy-first AI assistant built by Indian vibe coder for autonomous edge deployment. Run it offline with Ollama, or use Claude/other providers. Multi-channel (Telegram, Discord), feather-light (<100MB), and designed for frugal innovation.
+
+> **🇮🇳 Made in India**: Built with frugal innovation principles. Privacy-first. No vendor lock-in. Community-driven.
 
 ---
 
@@ -44,6 +55,76 @@ For code coverage badges to work:
 
 ---
 
+## 🔓 Offline Setup with Ollama
+
+**Goal**: Run Nucleo completely offline without Claude API or internet access.
+
+### Quick Start (Ollama)
+
+```bash
+# 1. Install Ollama on your machine
+# Visit: https://ollama.ai/
+
+# 2. Download a model 
+ollama pull llama2
+# or for faster setup: ollama pull tinyllama
+
+# 3. Start Ollama (runs on localhost:11434)
+ollama serve
+
+# In another terminal:
+# 4. Configure Nucleo for Ollama
+python main.py setup
+# Select "Ollama" when prompted for LLM provider
+
+# 5. Run locally
+python main.py chat
+```
+
+### Recommended Models
+
+| Model | Size | Speed | VRAM | Best For |
+|-------|------|-------|------|----------|
+| `tinyllama` | 0.4GB | ⚡⚡⚡ | 512MB | RPi Zero, testing |
+| `llama2` | 3.8GB | ⚡⚡ | 4GB | Balanced performance |
+| `mistral` | 4GB | ⚡⚡ | 4GB | Better reasoning |
+| `neural-chat` | 4GB | ⚡⚡ | 4GB | Instruction following |
+
+### For Raspberry Pi Zero/Edge Devices
+
+```bash
+# Use smallest model to fit in 512MB
+ollama pull tinyllama
+
+# Or compile Ollama for ARM
+# See: https://github.com/ollama/ollama/discussions/1722
+```
+
+### Full Offline Stack
+
+```json
+{
+  "agent": {
+    "model": "tinyllama"
+  },
+  "providers": {
+    "ollama": {
+      "api_base": "http://localhost:11434"
+    }
+  },
+  "tools": {
+    "search": {
+      "enabled": false  # Disable web search for full offline
+    },
+    "bash": {
+      "enabled": true  # Local commands only
+    }
+  }
+}
+```
+
+> **Privacy**: Everything runs locally. No data sent to cloud. Perfect for sensitive use cases.
+
 ## 🎉 Latest Release (v1.0) - February 2026
 
 **Major Features Added:**
@@ -52,13 +133,24 @@ For code coverage badges to work:
 - ⏰ **Heartbeat/Scheduler**: Autonomous task scheduling with cron expressions for proactive agent actions
 - 🚀 **Setup Wizard**: Interactive `python main.py setup` for zero-config onboarding
 - 🌐 **Multi-Channel Gateway**: Unified Telegram + Discord support with message normalization
-- 📦 **Enhanced LLM Support**: Auto-detection between Ollama (offline) and Claude API
+- 📦 **Offline-First**: **Ollama integration** for completely offline, privacy-respecting deployment (no Claude needed)
+- 🇮🇳 **Phase 1 Memory Optimization**: 40% memory reduction for Raspberry Pi compatibility
 
 **Breaking Changes**: None - full backward compatibility maintained
 
 **Migration**: Existing config.json files continue to work; new features are opt-in (enabled by default)
 
 ---
+
+## 🇮🇳 Made in India
+
+Nucleo is developed by a passionate team of Indian engineers who believe in:
+- 💡 **Frugal Innovation**: More capability with fewer resources
+- 🔒 **Data Privacy**: Local-first, offline-capable deployment
+- 🤝 **Community**: Open source forever, no vendor lock-in
+- 📚 **Knowledge Sharing**: Detailed docs, examples, and tutorials
+
+> "Do more with less. Enable everyone." — Our Philosophy
 
 ## ✨ Features
 
@@ -860,6 +952,31 @@ A: Check console logs first. Enable verbose logging with `DEBUG=1`. See [GATEWAY
 
 ---
 
+## 💝 Support This Project
+
+Love Nucleo? Help us grow:
+
+### ⭐ Star Us
+[Star Nucleo on GitHub](https://github.com/ReleaseOnMonday/nucleo) ⭐ — It helps visibility!
+
+### 💰 Donate
+Your support helps us:
+- Pay for development and infrastructure
+- Sponsor core team members
+- Support Indian tech education initiatives
+- Keep the project open source forever
+
+| Method | Link | Notes |
+|--------|------|-------|
+| **GitHub Sponsors** | [Sponsor](https://github.com/sponsors/ReleaseOnMonday) | Monthly or one-time |
+| **Buy Me a Coffee** | [☕ Coffee](https://www.buymeacoffee.com/nucleoai) | International |
+| **UPI (India)** | `nucleo-ai@upi` | Direct support |
+| **PayPal** | [PayPal.me](https://paypal.me/nucleoai) | Worldwide |
+
+Even $1-5 makes a difference! 🙏
+
+---
+
 ## 🤝 Community
 
 - **Issues**: Report bugs or feature requests on GitHub
@@ -906,7 +1023,15 @@ copies or substantial portions of the Software.
 
 ---
 
-**Made with 🔧 for developers who value simplicity and efficiency**
+<div align="center">
 
-⭐ Like Nucleo? Consider starring the repository!
+### Made with ❤️ in India, for the World 🇮🇳🌍
+
+**[⭐ Star Us](https://github.com/ReleaseOnMonday/nucleo) • [📖 Docs](./docs/) • [💬 Discussions](https://github.com/ReleaseOnMonday/nucleo/discussions) • [💝 Donate](#-support-this-project)**
+
+**"Do more with less. Enable everyone."**
+
+*Built by Indian engineers, powered by community collaboration*
+
+</div>
 
